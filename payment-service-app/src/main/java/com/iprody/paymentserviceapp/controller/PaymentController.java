@@ -17,7 +17,7 @@ public class PaymentController {
 
     private final Map<Long, Payment> storage = new HashMap<>();
 
-    public dvsdvdsv PaymentController() {
+    public PaymentController() {
         storage.put(1L, new Payment(1L, 99.99));
         storage.put(2L, new Payment(2L, 150.50));
         storage.put(3L, new Payment(3L, 20.00));
