@@ -29,7 +29,7 @@ public class PaymentController {
         return storage.get(id);
     }
 
-    @GetMapping
+    @GetMapping ()
     public List<Payment> getAllPayments() {
         return new ArrayList<>(storage.values());
     }
