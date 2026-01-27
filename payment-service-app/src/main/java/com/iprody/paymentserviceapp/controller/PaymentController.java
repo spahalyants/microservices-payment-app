@@ -24,13 +24,13 @@ public class PaymentController {
         storage.put(4L, new Payment(4L, 75.25));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping ()
+    public List<Payment> getAllPayments() {
+        return new ArrayList<>(storage.values());
+
+    }@GetMapping("/{id}")
     public Payment getPaymentById(@PathVariable Long id) {
         return storage.get(id);
     }
 
-    @GetMapping
-    public List<Payment> getAllPayments() {
-        return new ArrayList<>(storage.values());
-    }
 }
