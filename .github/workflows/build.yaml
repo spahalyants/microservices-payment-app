@@ -21,15 +21,11 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Compile with Maven
-        run: mvn -B -ntp clean compile
+      - name: Compile
+        run: mvn -B -ntp compile
 
-      - name: Run tests
+      - name: Test
         run: mvn -B -ntp test
 
-      - name: Run Checkstyle
-        run: mvn -B -ntp checkstyle:check
-
-      - name: Run Checkstyle (payment-service-app)
-        working-directory: ./payment-service-app
-        run: mvn -B -ntp checkstyle:check
+      - name: Verify (Checkstyle)
+        run: mvn -B -ntp verify
