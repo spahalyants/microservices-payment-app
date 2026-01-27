@@ -15,4 +15,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <modules>
+        <module>payment-service-app</module>
+    </modules>
+
 </project>
