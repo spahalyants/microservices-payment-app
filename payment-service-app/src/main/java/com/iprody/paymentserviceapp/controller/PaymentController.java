@@ -16,6 +16,7 @@ import java.util.Map;
 public class PaymentController {
 
     private final Map<Long, Payment> storage = new HashMap<>();
+    private final Map<Long, Payment> checkstyle_test = new HashMap<>();
 
     public PaymentController() {
         storage.put(1L, new Payment(1L, 99.99));
