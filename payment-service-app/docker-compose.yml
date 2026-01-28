@@ -1,0 +1,7 @@
+version: '3.8'
+
+services:
+  payment-service-app:
+    image: payment-service-app
+    ports:
+      - "8080:8080"
