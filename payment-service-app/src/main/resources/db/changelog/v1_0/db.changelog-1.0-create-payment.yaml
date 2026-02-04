@@ -1,0 +1,89 @@
+# src/main/resources/db/changelog/v1_0/db.changelog-1.0-create-payment.yaml
+databaseChangeLog:
+
+  - changeSet:
+      id: 1.0-create-payment-table
+      author: mentor
+      labels: payments
+
+      preConditions:
+        onFail: MARK_RAN
+        onError: HALT
+        not:
+          tableExists:
+            schemaName: public
+            tableName: payments
+
+      changes:
+        - createTable:
+            schemaName: public
+            tableName: payments
+            remarks: "Stores payment transactions"
+            columns:
+
+              - column:
+                  name: guid
+                  type: uuid
+                  remarks: "Primary identifier"
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: payments_pkey
+                    nullable: false
+
+              - column:
+                  name: inquiry_ref_id
+                  type: uuid
+                  remarks: "External inquiry reference"
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: amount
+                  type: numeric(5,2)
+                  remarks: "Payment amount"
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: currency
+                  type: varchar(3)
+                  remarks: "ISO 4217 currency code"
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: transaction_ref_id
+                  type: uuid
+                  remarks: "Transaction reference ID"
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: status
+                  type: varchar(255)
+                  remarks: "Payment status"
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: note
+                  type: text
+                  remarks: "Optional note"
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  remarks: "Creation timestamp"
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  remarks: "Last update timestamp"
+                  constraints:
+                    nullable: false

@@ -2,11 +2,15 @@ spring:
   datasource:
     url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    username: samvel
+    password: test
   jpa:
     hibernate:
       ddl-auto: create-drop
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
+
+  liquibase:
+    enabled: false
+    change-log: classpath:db/changelog/db.db.changelog-master.yaml

@@ -1,0 +1,37 @@
+# src/main/resources/db/changelog/db.changelog-master.yaml
+databaseChangeLog:
+
+  # Tag empty database (ALWAYS run - no context here)
+  - changeSet:
+      id: tag-0.0
+      author: mentor
+      comment: "Tag for empty database"
+      changes:
+        - tagDatabase:
+            tag: v0.0
+
+  # Schema (ALWAYS run - schema changes should not be behind contexts)
+  - include:
+      file: v1_0/db.changelog-1.0-create-payment.yaml
+      relativeToChangelogFile: true
+
+  # Tag after schema
+  - changeSet:
+      id: tag-1.0
+      author: mentor
+      changes:
+        - tagDatabase:
+            tag: v1.0
+
+  # Demo data (DEV only - controlled by contexts)
+  - include:
+      file: v1_1/db.changelog-1.1-add-demo-payment.yaml
+      relativeToChangelogFile: true
+
+  # Tag after demo data (ALWAYS run; tag is harmless even if demo data is skipped)
+  - changeSet:
+      id: tag-1.1
+      author: mentor
+      changes:
+        - tagDatabase:
+            tag: v1.1
