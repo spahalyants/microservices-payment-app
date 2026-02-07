@@ -1,0 +1,39 @@
+databaseChangeLog:
+
+  - changeSet:
+      id: 1.1-insert-demo-payment
+      author: mentor
+      context: dev
+      labels: payments
+      comment: "Insert demo payment row for development/testing"
+
+      preConditions:
+        onFail: MARK_RAN
+        onError: HALT
+        not:
+          sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*) FROM public.payments
+              WHERE guid = 'ac328a1a-1e60-4dd3-bee5-ed573d74c841'
+
+      changes:
+        - insert:
+            schemaName: public
+            tableName: payments
+            columns:
+              - column: { name: guid, value: "ac328a1a-1e60-4dd3-bee5-ed573d74c841" }
+              - column: { name: inquiry_ref_id, value: "607ed0ea-cb8a-4ff8-a694-1213c314e65c" }
+              - column: { name: amount, valueNumeric: 99.99 }
+              - column: { name: currency, value: "USD" }
+              - column: { name: transaction_ref_id, value: "f113e373-b7b0-4f38-abf6-ccc3a89b8236" }
+              - column: { name: status, value: "RECEIVED" }
+              - column: { name: note, value: "Initial test payment" }
+              - column: { name: created_at, valueComputed: "CURRENT_TIMESTAMP" }
+              - column: { name: updated_at, valueComputed: "CURRENT_TIMESTAMP" }
+
+      rollback:
+        - delete:
+            schemaName: public
+            tableName: payments
+            where: "guid = 'ac328a1a-1e60-4dd3-bee5-ed573d74c841'"

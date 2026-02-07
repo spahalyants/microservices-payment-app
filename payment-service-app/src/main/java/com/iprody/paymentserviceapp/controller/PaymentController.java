@@ -19,13 +19,13 @@ public class PaymentController {
         this.paymentRepository = paymentRepository;
     }
 
-    // b) GET http://localhost:8080/payments
+    // GET http://localhost:8080/payments
     @GetMapping
     public List<Payment> getAllPayments() {
         return paymentRepository.findAll();
     }
 
-    // a) GET http://localhost:8080/payments/{guid}
+    // GET http://localhost:8080/payments/{guid}
     @GetMapping("/{guid}")
     public Payment getPaymentByGuid(@PathVariable UUID guid) {
         return paymentRepository.findById(guid)
