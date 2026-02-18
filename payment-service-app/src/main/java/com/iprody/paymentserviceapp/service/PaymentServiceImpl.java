@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -32,5 +33,12 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentRepository
                 .findAll(PaymentFilterFactory.fromFilter(filter), pageable)
                 .map(paymentMapper::toDto);
+    }
+
+    @Override
+    public PaymentDto findByGuid(UUID guid) {
+        return paymentRepository.findById(guid)
+                .map(paymentMapper::toDto)
+                .orElseThrow(() -> new RuntimeException("Payment not found: " + guid));
     }
 }
