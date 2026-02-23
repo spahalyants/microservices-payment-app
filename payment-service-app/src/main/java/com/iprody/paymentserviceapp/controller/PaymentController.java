@@ -1,7 +1,7 @@
 package com.iprody.paymentserviceapp.controller;
 
 import com.iprody.paymentserviceapp.persistence.PaymentFilter;
-import com.iprody.paymentserviceapp.persistence.model.Payment;
+import com.iprody.paymentserviceapp.service.dto.PaymentDto;
 import com.iprody.paymentserviceapp.service.PaymentService;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,19 +19,17 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @GetMapping
-    public List<Payment> findAll() {
+    public List<PaymentDto> findAll() {
         return paymentService.findAll();
     }
 
-    // http://localhost:8080/payments/search?currency=USD&minAmount=10&maxAmount=100
-
     @GetMapping("/search")
-    public Page<Payment> search(
+    public Page<PaymentDto> search(
             @ModelAttribute PaymentFilter filter,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "ASC") String sortDirection,
-            @RequestParam(defaultValue = "0") int page,           // Task 3
-            @RequestParam(defaultValue = "25") int size            // Task 3
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size
     ) {
         Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
