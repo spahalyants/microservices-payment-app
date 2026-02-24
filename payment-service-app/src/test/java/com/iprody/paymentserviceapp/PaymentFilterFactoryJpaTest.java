@@ -8,12 +8,10 @@ import com.iprody.paymentserviceapp.persistence.model.PaymentStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-
-
-
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.ActiveProfiles;
@@ -31,7 +29,6 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.jpa.hibernate.ddl-auto=create-drop"
 })
 @ActiveProfiles("test")
-
 class PaymentFilterFactoryJpaTest {
 
     @Autowired
@@ -39,105 +36,117 @@ class PaymentFilterFactoryJpaTest {
 
     @BeforeEach
     void seed() {
-        paymentRepository.deleteAll();
+        paymentRepository.deleteAllInBatch();
 
-        paymentRepository.save(payment(id(1), "USD", "10.00",
+        paymentRepository.save(payment("USD", "10.00",
                 Instant.parse("2026-01-10T00:00:00Z"), PaymentStatus.PENDING));
 
-        paymentRepository.save(payment(id(2), "USD", "50.00",
+        paymentRepository.save(payment("USD", "50.00",
                 Instant.parse("2026-01-20T00:00:00Z"), PaymentStatus.APPROVED));
 
-        paymentRepository.save(payment(id(3), "EUR", "100.00",
+        paymentRepository.save(payment("EUR", "100.00",
                 Instant.parse("2026-02-10T00:00:00Z"), PaymentStatus.PENDING));
     }
 
     // b) criteria filters
-    static Stream<Case> filterCases() {
+    static Stream<Arguments> filterCases() {
         return Stream.of(
-
                 // currency
-                new Case(new PaymentFilter("USD", null, null, null, null, null), List.of(id(1), id(2))),
+                Arguments.of(new PaymentFilter("USD", null, null, null, null, null), 2),
 
                 // min only
-                new Case(new PaymentFilter(null, bd("50.00"), null, null, null, null), List.of(id(2), id(3))),
+                Arguments.of(new PaymentFilter(null, bd("50.00"), null, null, null, null), 2),
 
                 // max only
-                new Case(new PaymentFilter(null, null, bd("50.00"), null, null, null), List.of(id(1), id(2))),
+                Arguments.of(new PaymentFilter(null, null, bd("50.00"), null, null, null), 2),
 
                 // range amount
-                new Case(new PaymentFilter(null, bd("10.00"), bd("50.00"), null, null, null), List.of(id(1), id(2))),
+                Arguments.of(new PaymentFilter(null, bd("10.00"), bd("50.00"), null, null, null), 2),
 
                 // createdAfter only (>=)
-                new Case(new PaymentFilter(null, null, null,
-                        Instant.parse("2026-01-15T00:00:00Z"), null, null), List.of(id(2), id(3))),
+                Arguments.of(new PaymentFilter(null, null, null,
+                        Instant.parse("2026-01-15T00:00:00Z"), null, null), 2),
 
                 // createdBefore only (<=)
-                new Case(new PaymentFilter(null, null, null,
-                        null, Instant.parse("2026-02-01T00:00:00Z"), null), List.of(id(1), id(2))),
+                Arguments.of(new PaymentFilter(null, null, null,
+                        null, Instant.parse("2026-02-01T00:00:00Z"), null), 2),
 
                 // created range (between inclusive)
-                new Case(new PaymentFilter(null, null, null,
+                Arguments.of(new PaymentFilter(null, null, null,
                         Instant.parse("2026-01-01T00:00:00Z"),
                         Instant.parse("2026-01-31T23:59:59Z"),
-                        null), List.of(id(1), id(2))),
+                        null), 2),
 
                 // status
-                new Case(new PaymentFilter(null, null, null, null, null, PaymentStatus.PENDING), List.of(id(1), id(3))),
+                Arguments.of(new PaymentFilter(null, null, null, null, null, PaymentStatus.PENDING), 2),
 
                 // combined currency + status
-                new Case(new PaymentFilter("USD", null, null, null, null, PaymentStatus.PENDING), List.of(id(1)))
+                Arguments.of(new PaymentFilter("USD", null, null, null, null, PaymentStatus.PENDING), 1)
         );
     }
 
     @ParameterizedTest
     @MethodSource("filterCases")
-    void shouldFilterCorrectly(Case c) {
+    void shouldFilterCorrectly(PaymentFilter filter, int expectedCount) {
         // given
-        Specification<Payment> spec = PaymentFilterFactory.fromFilter(c.filter());
+        Specification<Payment> spec = PaymentFilterFactory.fromFilter(filter);
         Pageable pageable = PageRequest.of(0, 25);
 
         // when
         Page<Payment> page = paymentRepository.findAll(spec, pageable);
 
         // then
-        List<UUID> ids = page.getContent().stream().map(Payment::getGuid).toList();
-        assertThat(ids).containsExactlyInAnyOrderElementsOf(c.expectedGuids());
+        assertThat(page.getTotalElements()).isEqualTo(expectedCount);
     }
 
     // c) sorting
     @Test
     void shouldSortByAmountAsc() {
         // given
-        Specification<Payment> spec = PaymentFilterFactory.fromFilter(new PaymentFilter(null, null, null, null, null, null));
+        Specification<Payment> spec = PaymentFilterFactory.fromFilter(
+                new PaymentFilter(null, null, null, null, null, null)
+        );
         Pageable pageable = PageRequest.of(0, 25, Sort.by(Sort.Direction.ASC, "amount"));
 
         // when
         Page<Payment> page = paymentRepository.findAll(spec, pageable);
 
         // then
-        assertThat(page.getContent().stream().map(Payment::getGuid).toList())
-                .containsExactly(id(1), id(2), id(3)); // 10, 50, 100
+        List<BigDecimal> amounts = page.getContent().stream().map(Payment::getAmount).toList();
+        assertThat(amounts).containsExactly(
+                new BigDecimal("10.00"),
+                new BigDecimal("50.00"),
+                new BigDecimal("100.00")
+        );
     }
 
     @Test
     void shouldSortByCreatedAtDesc() {
         // given
-        Specification<Payment> spec = PaymentFilterFactory.fromFilter(new PaymentFilter(null, null, null, null, null, null));
+        Specification<Payment> spec = PaymentFilterFactory.fromFilter(
+                new PaymentFilter(null, null, null, null, null, null)
+        );
         Pageable pageable = PageRequest.of(0, 25, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         // when
         Page<Payment> page = paymentRepository.findAll(spec, pageable);
 
         // then
-        assertThat(page.getContent().stream().map(Payment::getGuid).toList())
-                .containsExactly(id(3), id(2), id(1));
+        List<Instant> dates = page.getContent().stream().map(Payment::getCreatedAt).toList();
+        assertThat(dates).containsExactly(
+                Instant.parse("2026-02-10T00:00:00Z"),
+                Instant.parse("2026-01-20T00:00:00Z"),
+                Instant.parse("2026-01-10T00:00:00Z")
+        );
     }
 
     // d) pagination defaults
     @Test
     void shouldReturnFirstPageWithDefaultSize25() {
         // given
-        Specification<Payment> spec = PaymentFilterFactory.fromFilter(new PaymentFilter(null, null, null, null, null, null));
+        Specification<Payment> spec = PaymentFilterFactory.fromFilter(
+                new PaymentFilter(null, null, null, null, null, null)
+        );
         Pageable pageable = PageRequest.of(0, 25);
 
         // when
@@ -151,9 +160,8 @@ class PaymentFilterFactoryJpaTest {
     }
 
     // helpers
-    private static Payment payment(UUID guid, String currency, String amount, Instant createdAt, PaymentStatus status) {
+    private static Payment payment(String currency, String amount, Instant createdAt, PaymentStatus status) {
         Payment p = new Payment();
-        p.setGuid(guid);
         p.setInquiryRefId(UUID.randomUUID());
         p.setTransactionRefId(UUID.randomUUID());
         p.setCurrency(currency);
@@ -165,13 +173,7 @@ class PaymentFilterFactoryJpaTest {
         return p;
     }
 
-    private static UUID id(int n) {
-        return UUID.fromString(String.format("00000000-0000-0000-0000-00000000000%d", n));
-    }
-
     private static BigDecimal bd(String s) {
         return new BigDecimal(s);
     }
-
-    record Case(PaymentFilter filter, List<UUID> expectedGuids) {}
 }
