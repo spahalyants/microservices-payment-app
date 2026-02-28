@@ -9,8 +9,18 @@ import java.util.List;
 import java.util.UUID;
 
 public interface PaymentService {
+
     List<PaymentDto> findAll();
+
     Page<PaymentDto> search(PaymentFilter filter, Pageable pageable);
+
     PaymentDto findByGuid(UUID guid);
 
+    PaymentDto create(PaymentDto dto);
+
+    PaymentDto update(UUID guid, PaymentDto dto);
+
+    PaymentDto updateNote(UUID guid, String note);
+
+    void delete(UUID guid);
 }

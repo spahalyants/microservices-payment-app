@@ -1,15 +1,28 @@
 package com.iprody.paymentserviceapp.controller;
 
+import com.iprody.paymentserviceapp.service.dto.NoteUpdateDto;
 import com.iprody.paymentserviceapp.persistence.PaymentFilter;
-import com.iprody.paymentserviceapp.service.dto.PaymentDto;
 import com.iprody.paymentserviceapp.service.PaymentService;
+import com.iprody.paymentserviceapp.service.dto.PaymentDto;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/payments")
@@ -17,6 +30,17 @@ import java.util.List;
 public class PaymentController {
 
     private final PaymentService paymentService;
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public PaymentDto create(@RequestBody PaymentDto dto) {
+        return paymentService.create(dto);
+    }
+
+    @GetMapping("/{guid}")
+    public PaymentDto get(@PathVariable UUID guid) {
+        return paymentService.findByGuid(guid);
+    }
 
     @GetMapping
     public List<PaymentDto> findAll() {
@@ -26,14 +50,31 @@ public class PaymentController {
     @GetMapping("/search")
     public Page<PaymentDto> search(
             @ModelAttribute PaymentFilter filter,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "ASC") String sortDirection,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "25") int size
+            @PageableDefault(size = 25, sort = "createdAt") Pageable pageable
     ) {
-        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
-        Pageable pageable = PageRequest.of(page, size, sort);
         return paymentService.search(filter, pageable);
+    }
+
+    @PutMapping("/{guid}")
+    public PaymentDto update(
+            @PathVariable UUID guid,
+            @RequestBody PaymentDto dto
+    ) {
+        return paymentService.update(guid, dto);
+    }
+
+    @PatchMapping("/{guid}/note")
+    public PaymentDto updateNote(
+            @PathVariable UUID guid,
+            @RequestBody NoteUpdateDto dto
+    ) {
+        return paymentService.updateNote(guid, dto.getNote());
+    }
+
+    @DeleteMapping("/{guid}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable UUID guid) {
+        paymentService.delete(guid);
     }
 }
 
