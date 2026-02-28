@@ -7,7 +7,7 @@ import com.iprody.paymentserviceapp.persistence.model.Payment;
 import com.iprody.paymentserviceapp.persistence.model.PaymentStatus;
 import com.iprody.paymentserviceapp.service.PaymentServiceImpl;
 import com.iprody.paymentserviceapp.service.dto.PaymentDto;
-import jakarta.persistence.EntityNotFoundException;
+import com.iprody.paymentserviceapp.exceptions.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
