@@ -3,12 +3,14 @@ package com.iprody.paymentserviceapp.controller;
 import com.iprody.paymentserviceapp.service.dto.NoteUpdateDto;
 import com.iprody.paymentserviceapp.persistence.PaymentFilter;
 import com.iprody.paymentserviceapp.service.PaymentService;
+import com.iprody.paymentserviceapp.service.dto.CreatePaymentDto;
 import com.iprody.paymentserviceapp.service.dto.PaymentDto;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -33,21 +35,25 @@ public class PaymentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public PaymentDto create(@RequestBody PaymentDto dto) {
+    @PreAuthorize("hasRole('admin')")
+    public PaymentDto create(@RequestBody CreatePaymentDto dto) {
         return paymentService.create(dto);
     }
 
     @GetMapping("/{guid}")
+    @PreAuthorize("hasAnyRole('admin', 'reader')")
     public PaymentDto get(@PathVariable UUID guid) {
         return paymentService.findByGuid(guid);
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('admin', 'reader')")
     public List<PaymentDto> findAll() {
         return paymentService.findAll();
     }
 
     @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('admin', 'reader')")
     public Page<PaymentDto> search(
             @ModelAttribute PaymentFilter filter,
             @PageableDefault(size = 25, sort = "createdAt") Pageable pageable
@@ -56,6 +62,7 @@ public class PaymentController {
     }
 
     @PutMapping("/{guid}")
+    @PreAuthorize("hasRole('admin')")
     public PaymentDto update(
             @PathVariable UUID guid,
             @RequestBody PaymentDto dto
@@ -64,15 +71,17 @@ public class PaymentController {
     }
 
     @PatchMapping("/{guid}/note")
+    @PreAuthorize("hasRole('admin')")
     public PaymentDto updateNote(
             @PathVariable UUID guid,
             @RequestBody NoteUpdateDto dto
     ) {
-        return paymentService.updateNote(guid, dto.getNote());
+        return paymentService.updateNote(guid, dto.note());
     }
 
     @DeleteMapping("/{guid}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('admin')")
     public void delete(@PathVariable UUID guid) {
         paymentService.delete(guid);
     }

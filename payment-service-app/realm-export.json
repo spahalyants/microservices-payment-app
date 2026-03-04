@@ -1,0 +1,47 @@
+{
+  "realm": "iprody-lms",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "basic_client",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "myclient-secret",
+      "redirectUris": ["http://localhost:8085/*"],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "username": "admin_user",
+      "enabled": true,
+      "email": "admin@example.local",
+      "firstName": "Admin",
+      "lastName": "User",
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "adminpassword", "temporary": false }
+      ],
+      "realmRoles": ["admin"]
+    },
+    {
+      "username": "reader_user",
+      "enabled": true,
+      "email": "reader@example.local",
+      "firstName": "Reader",
+      "lastName": "User",
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "readerpassword", "temporary": false }
+      ],
+      "realmRoles": ["reader"]
+    }
+  ],
+  "roles": {
+    "realm": [
+      { "name": "admin", "description": "Admin user role" },
+      { "name": "reader", "description": "Reader user role" }
+    ]
+  }
+}

@@ -15,3 +15,4 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID>, JpaSpec
     List<Payment> findByStatus(PaymentStatus status);
 
 }
+

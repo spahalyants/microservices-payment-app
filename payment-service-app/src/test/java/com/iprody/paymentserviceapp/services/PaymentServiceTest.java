@@ -1,13 +1,14 @@
 package com.iprody.paymentserviceapp.services;
 
+import com.iprody.paymentserviceapp.exceptions.EntityNotFoundException;
 import com.iprody.paymentserviceapp.mapper.PaymentMapper;
 import com.iprody.paymentserviceapp.persistence.PaymentFilter;
 import com.iprody.paymentserviceapp.persistence.PaymentRepository;
 import com.iprody.paymentserviceapp.persistence.model.Payment;
 import com.iprody.paymentserviceapp.persistence.model.PaymentStatus;
 import com.iprody.paymentserviceapp.service.PaymentServiceImpl;
+import com.iprody.paymentserviceapp.service.dto.CreatePaymentDto;
 import com.iprody.paymentserviceapp.service.dto.PaymentDto;
-import com.iprody.paymentserviceapp.exceptions.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -27,7 +28,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.catchThrowable;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -86,12 +88,13 @@ class PaymentServiceTest {
         when(paymentRepository.findById(guid)).thenReturn(Optional.empty());
 
         // when
-        Throwable thrown = catchThrowable(() -> paymentService.findByGuid(guid));
+        EntityNotFoundException exception = assertThrows(
+                EntityNotFoundException.class,
+                () -> paymentService.findByGuid(guid)
+        );
 
         // then
-        assertThat(thrown)
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessage("Payment not found: " + guid);
+        assertEquals("Payment not found: " + guid, exception.getMessage());
 
         verify(paymentRepository).findById(guid);
         verifyNoMoreInteractions(paymentRepository);
@@ -171,8 +174,12 @@ class PaymentServiceTest {
     @Test
     void shouldCreatePaymentAndReturnDto() {
         // given
-        PaymentDto inputDto = paymentDto(
-                paymentEntity(UUID.randomUUID(), new BigDecimal("42.50"), "USD", PaymentStatus.RECEIVED)
+        CreatePaymentDto inputDto = new CreatePaymentDto(
+                UUID.randomUUID(),
+                new BigDecimal("42.50"),
+                "USD",
+                PaymentStatus.RECEIVED,
+                "note"
         );
         Payment entity = paymentEntity(null, new BigDecimal("42.50"), "USD", PaymentStatus.RECEIVED);
         Payment savedEntity = paymentEntity(UUID.randomUUID(), new BigDecimal("42.50"), "USD", PaymentStatus.RECEIVED);
@@ -191,7 +198,7 @@ class PaymentServiceTest {
 
         verify(paymentMapper).toEntity(inputDto);
         verify(paymentRepository).save(paymentCaptor.capture());
-        assertThat(paymentCaptor.getValue().getGuid()).isNull(); // guid сброшен в null
+        assertThat(paymentCaptor.getValue().getGuid()).isNull();
         verify(paymentMapper).toDto(savedEntity);
         verifyNoMoreInteractions(paymentRepository, paymentMapper);
     }
@@ -238,12 +245,13 @@ class PaymentServiceTest {
         when(paymentRepository.findById(guid)).thenReturn(Optional.empty());
 
         // when
-        Throwable thrown = catchThrowable(() -> paymentService.update(guid, dto));
+        EntityNotFoundException exception = assertThrows(
+                EntityNotFoundException.class,
+                () -> paymentService.update(guid, dto)
+        );
 
         // then
-        assertThat(thrown)
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessage("Payment not found: " + guid);
+        assertEquals("Payment not found: " + guid, exception.getMessage());
 
         verify(paymentRepository).findById(guid);
         verifyNoMoreInteractions(paymentRepository);
@@ -286,12 +294,13 @@ class PaymentServiceTest {
         when(paymentRepository.findById(guid)).thenReturn(Optional.empty());
 
         // when
-        Throwable thrown = catchThrowable(() -> paymentService.updateNote(guid, "note"));
+        EntityNotFoundException exception = assertThrows(
+                EntityNotFoundException.class,
+                () -> paymentService.updateNote(guid, "note")
+        );
 
         // then
-        assertThat(thrown)
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessage("Payment not found: " + guid);
+        assertEquals("Payment not found: " + guid, exception.getMessage());
 
         verify(paymentRepository).findById(guid);
         verifyNoMoreInteractions(paymentRepository);
@@ -325,12 +334,13 @@ class PaymentServiceTest {
         when(paymentRepository.existsById(guid)).thenReturn(false);
 
         // when
-        Throwable thrown = catchThrowable(() -> paymentService.delete(guid));
+        EntityNotFoundException exception = assertThrows(
+                EntityNotFoundException.class,
+                () -> paymentService.delete(guid)
+        );
 
         // then
-        assertThat(thrown)
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessage("Payment not found: " + guid);
+        assertEquals("Payment not found: " + guid, exception.getMessage());
 
         verify(paymentRepository).existsById(guid);
         verifyNoMoreInteractions(paymentRepository);

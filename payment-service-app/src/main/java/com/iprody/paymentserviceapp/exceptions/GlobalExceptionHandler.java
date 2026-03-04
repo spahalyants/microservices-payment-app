@@ -6,25 +6,22 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 
+import java.time.Instant;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(EntityNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorDto handleEntityNotFound(EntityNotFoundException ex) {
-        return new ErrorDto(
-                ex.getEntityId(),
-                ex.getOperation(),
-                ex.getMessage()
-        );
+    public ErrorMessageDto handleEntityNotFound(EntityNotFoundException ex) {
+        return new ErrorMessageDto(ex.getMessage(), Instant.now());
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorDto handleOther(Exception ex) {
-        return new ErrorDto(
-                null,
-                ex.getMessage()
-        );
+    public ErrorMessageDto handleOther(Exception ex) {
+        return new ErrorMessageDto(ex.getMessage(), Instant.now());
     }
 }
+
+
