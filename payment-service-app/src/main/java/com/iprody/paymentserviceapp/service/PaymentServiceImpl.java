@@ -1,12 +1,12 @@
 package com.iprody.paymentserviceapp.service;
 
 import com.iprody.paymentserviceapp.exceptions.EntityNotFoundException;
-import com.iprody.paymentserviceapp.exceptions.Operation;
 import com.iprody.paymentserviceapp.mapper.PaymentMapper;
 import com.iprody.paymentserviceapp.persistence.PaymentFilter;
 import com.iprody.paymentserviceapp.persistence.PaymentFilterFactory;
 import com.iprody.paymentserviceapp.persistence.PaymentRepository;
 import com.iprody.paymentserviceapp.persistence.model.Payment;
+import com.iprody.paymentserviceapp.service.dto.CreatePaymentDto;
 import com.iprody.paymentserviceapp.service.dto.PaymentDto;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
+
 
 @Service
 @AllArgsConstructor
@@ -43,15 +44,13 @@ public class PaymentServiceImpl implements PaymentService {
                 .map(paymentMapper::toDto)
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Payment not found: " + guid,
-                        Operation.FIND_BY_ID_OP,
                         guid
                 ));
     }
 
     @Override
-    public PaymentDto create(PaymentDto dto) {
+    public PaymentDto create(CreatePaymentDto dto) {
         Payment entity = paymentMapper.toEntity(dto);
-        entity.setGuid(null);
         Payment saved = paymentRepository.save(entity);
         return paymentMapper.toDto(saved);
     }
@@ -61,7 +60,6 @@ public class PaymentServiceImpl implements PaymentService {
         Payment existing = paymentRepository.findById(guid)
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Payment not found: " + guid,
-                        Operation.UPDATE_OP,
                         guid
                 ));
 
@@ -80,7 +78,6 @@ public class PaymentServiceImpl implements PaymentService {
         Payment entity = paymentRepository.findById(guid)
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Payment not found: " + guid,
-                        Operation.UPDATE_NOTE_OP,
                         guid
                 ));
         entity.setNote(note);
@@ -92,7 +89,6 @@ public class PaymentServiceImpl implements PaymentService {
         if (!paymentRepository.existsById(guid)) {
             throw new EntityNotFoundException(
                     "Payment not found: " + guid,
-                    Operation.DELETE_OP,
                     guid
             );
         }

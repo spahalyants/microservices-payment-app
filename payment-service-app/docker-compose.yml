@@ -12,23 +12,25 @@ services:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d payment-db"]
+      test: ["CMD-SHELL", "pg_isready -U admin -d payments"]
       interval: 5s
       timeout: 3s
       retries: 20
 
-  payment-service-app:
-    image: payment-service-app:local
-    ports:
-      - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.3
+    container_name: keycloak
+    command:
+      - start-dev
+      - --http-port=8080
+      - --import-realm
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payments
-      SPRING_DATASOURCE_USERNAME: admin
-      SPRING_DATASOURCE_PASSWORD: secret
-      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8085:8080"
+    volumes:
+      - ./realm-export.json:/opt/keycloak/data/import/realm-export.json
 
   pgadmin:
     image: dpage/pgadmin4:latest

@@ -1,5 +1,6 @@
 package com.iprody.paymentserviceapp.service;
 
+import com.iprody.paymentserviceapp.service.dto.CreatePaymentDto;
 import com.iprody.paymentserviceapp.service.dto.PaymentDto;
 import com.iprody.paymentserviceapp.persistence.PaymentFilter;
 import org.springframework.data.domain.Page;
@@ -16,7 +17,7 @@ public interface PaymentService {
 
     PaymentDto findByGuid(UUID guid);
 
-    PaymentDto create(PaymentDto dto);
+    PaymentDto create(CreatePaymentDto dto);
 
     PaymentDto update(UUID guid, PaymentDto dto);
 
@@ -24,3 +25,4 @@ public interface PaymentService {
 
     void delete(UUID guid);
 }
+
