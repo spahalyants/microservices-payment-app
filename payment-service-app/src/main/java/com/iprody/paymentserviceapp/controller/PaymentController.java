@@ -6,6 +6,8 @@ import com.iprody.paymentserviceapp.service.PaymentService;
 import com.iprody.paymentserviceapp.service.dto.CreatePaymentDto;
 import com.iprody.paymentserviceapp.service.dto.PaymentDto;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -31,25 +33,36 @@ import java.util.UUID;
 @AllArgsConstructor
 public class PaymentController {
 
+    private static final Logger log = LoggerFactory.getLogger(PaymentController.class);
+
     private final PaymentService paymentService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('admin')")
     public PaymentDto create(@RequestBody CreatePaymentDto dto) {
-        return paymentService.create(dto);
+        log.info("Creating payment with inquiryRefId: {}", dto.inquiryRefId());
+        PaymentDto result = paymentService.create(dto);
+        log.debug("Created payment: {}", result);
+        return result;
     }
 
     @GetMapping("/{guid}")
     @PreAuthorize("hasAnyRole('admin', 'reader')")
     public PaymentDto get(@PathVariable UUID guid) {
-        return paymentService.findByGuid(guid);
+        log.info("Fetching payment by guid: {}", guid);
+        PaymentDto result = paymentService.findByGuid(guid);
+        log.debug("Fetched payment: {}", result);
+        return result;
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('admin', 'reader')")
     public List<PaymentDto> findAll() {
-        return paymentService.findAll();
+        log.info("Fetching all payments");
+        List<PaymentDto> result = paymentService.findAll();
+        log.debug("Fetched {} payments", result.size());
+        return result;
     }
 
     @GetMapping("/search")
@@ -58,7 +71,10 @@ public class PaymentController {
             @ModelAttribute PaymentFilter filter,
             @PageableDefault(size = 25, sort = "createdAt") Pageable pageable
     ) {
-        return paymentService.search(filter, pageable);
+        log.info("Searching payments with filter: {}", filter);
+        Page<PaymentDto> result = paymentService.search(filter, pageable);
+        log.debug("Search returned {} payments", result.getTotalElements());
+        return result;
     }
 
     @PutMapping("/{guid}")
@@ -67,7 +83,10 @@ public class PaymentController {
             @PathVariable UUID guid,
             @RequestBody PaymentDto dto
     ) {
-        return paymentService.update(guid, dto);
+        log.info("Updating payment with guid: {}", guid);
+        PaymentDto result = paymentService.update(guid, dto);
+        log.debug("Updated payment: {}", result);
+        return result;
     }
 
     @PatchMapping("/{guid}/note")
@@ -76,14 +95,19 @@ public class PaymentController {
             @PathVariable UUID guid,
             @RequestBody NoteUpdateDto dto
     ) {
-        return paymentService.updateNote(guid, dto.note());
+        log.info("Updating note for payment with guid: {}", guid);
+        PaymentDto result = paymentService.updateNote(guid, dto.note());
+        log.debug("Updated payment note: {}", result);
+        return result;
     }
 
     @DeleteMapping("/{guid}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasRole('admin')")
     public void delete(@PathVariable UUID guid) {
+        log.info("Deleting payment with guid: {}", guid);
         paymentService.delete(guid);
+        log.debug("Deleted payment with guid: {}", guid);
     }
 }
 
