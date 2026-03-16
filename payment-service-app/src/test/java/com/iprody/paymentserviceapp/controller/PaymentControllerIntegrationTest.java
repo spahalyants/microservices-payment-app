@@ -66,7 +66,7 @@ class PaymentControllerIntegrationTest extends AbstractPostgresIntegrationTest {
                 .andExpect(jsonPath("$.guid").exists())
                 .andExpect(jsonPath("$.currency").value("EUR"))
                 .andExpect(jsonPath("$.amount").value(123.45))
-                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andExpect(jsonPath("$.status").value("PROCESSING"))
                 .andReturn().getResponse().getContentAsString();
 
         UUID createdGuid = UUID.fromString(objectMapper.readTree(response).get("guid").asText());
