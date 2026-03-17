@@ -6,5 +6,6 @@ public enum PaymentStatus {
     PENDING,
     DECLINED,
     APPROVED,
-    NOT_SENT
+    NOT_SENT,
+    PROCESSING
 }

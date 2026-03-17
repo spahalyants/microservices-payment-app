@@ -1,7 +1,9 @@
 package com.iprody.paymentserviceapp.services;
 
+import com.iprody.paymentserviceapp.async.AsyncSender;
 import com.iprody.paymentserviceapp.exceptions.EntityNotFoundException;
 import com.iprody.paymentserviceapp.mapper.PaymentMapper;
+import com.iprody.paymentserviceapp.mapper.XPaymentAdapterMapper;
 import com.iprody.paymentserviceapp.persistence.PaymentFilter;
 import com.iprody.paymentserviceapp.persistence.PaymentRepository;
 import com.iprody.paymentserviceapp.persistence.model.Payment;
@@ -42,6 +44,12 @@ class PaymentServiceTest {
 
     @Mock
     private PaymentMapper paymentMapper;
+
+    @Mock
+    private XPaymentAdapterMapper xPaymentAdapterMapper;
+
+    @Mock
+    private AsyncSender asyncSender;
 
     @InjectMocks
     private PaymentServiceImpl paymentService;

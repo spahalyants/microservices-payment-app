@@ -3,6 +3,7 @@ package com.iprody.paymentserviceapp.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iprody.paymentserviceapp.AbstractPostgresIntegrationTest;
 import com.iprody.paymentserviceapp.TestJwtFactory;
+import com.iprody.paymentserviceapp.persistence.PaymentRepository;
 import com.iprody.paymentserviceapp.persistence.model.PaymentStatus;
 import com.iprody.paymentserviceapp.service.dto.CreatePaymentDto;
 import com.iprody.paymentserviceapp.service.dto.NoteUpdateDto;
@@ -22,6 +23,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
+
 
 @AutoConfigureMockMvc
 class PaymentControllerIntegrationTest extends AbstractPostgresIntegrationTest {
@@ -38,6 +41,9 @@ class PaymentControllerIntegrationTest extends AbstractPostgresIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private PaymentRepository paymentRepository;
+
     // -----------------------------------------------------------------------
     // POST /payments
     // -----------------------------------------------------------------------
@@ -52,7 +58,7 @@ class PaymentControllerIntegrationTest extends AbstractPostgresIntegrationTest {
                 "Integration test payment"
         );
 
-        mockMvc.perform(post(PAYMENTS_URL)
+        String response = mockMvc.perform(post(PAYMENTS_URL)
                         .with(TestJwtFactory.jwtWithRole("admin-user", "admin"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
@@ -60,7 +66,11 @@ class PaymentControllerIntegrationTest extends AbstractPostgresIntegrationTest {
                 .andExpect(jsonPath("$.guid").exists())
                 .andExpect(jsonPath("$.currency").value("EUR"))
                 .andExpect(jsonPath("$.amount").value(123.45))
-                .andExpect(jsonPath("$.status").value("PENDING"));
+                .andExpect(jsonPath("$.status").value("PROCESSING"))
+                .andReturn().getResponse().getContentAsString();
+
+        UUID createdGuid = UUID.fromString(objectMapper.readTree(response).get("guid").asText());
+        assertThat(paymentRepository.findById(createdGuid)).isPresent();
     }
 
     @Test

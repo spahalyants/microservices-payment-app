@@ -1,14 +1,20 @@
 package com.iprody.paymentserviceapp.service;
 
+import com.iprody.paymentserviceapp.async.AsyncSender;
+import com.iprody.paymentserviceapp.async.XPaymentAdapterRequestMessage;
 import com.iprody.paymentserviceapp.exceptions.EntityNotFoundException;
 import com.iprody.paymentserviceapp.mapper.PaymentMapper;
+import com.iprody.paymentserviceapp.mapper.XPaymentAdapterMapper;
 import com.iprody.paymentserviceapp.persistence.PaymentFilter;
 import com.iprody.paymentserviceapp.persistence.PaymentFilterFactory;
 import com.iprody.paymentserviceapp.persistence.PaymentRepository;
 import com.iprody.paymentserviceapp.persistence.model.Payment;
+import com.iprody.paymentserviceapp.persistence.model.PaymentStatus;
 import com.iprody.paymentserviceapp.service.dto.CreatePaymentDto;
 import com.iprody.paymentserviceapp.service.dto.PaymentDto;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,8 +26,12 @@ import java.util.UUID;
 @AllArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
+    private static final Logger log = LoggerFactory.getLogger(PaymentServiceImpl.class);
+
     private final PaymentRepository paymentRepository;
     private final PaymentMapper paymentMapper;
+    private final XPaymentAdapterMapper xPaymentAdapterMapper;
+    private final AsyncSender<XPaymentAdapterRequestMessage> asyncSender;
 
     @Override
     public List<PaymentDto> findAll() {
@@ -51,7 +61,15 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public PaymentDto create(CreatePaymentDto dto) {
         Payment entity = paymentMapper.toEntity(dto);
+        entity.setStatus(PaymentStatus.PROCESSING);
         Payment saved = paymentRepository.save(entity);
+        log.info("Payment created: guid={}, status=PROCESSING", saved.getGuid());
+
+        XPaymentAdapterRequestMessage requestMessage =
+                xPaymentAdapterMapper.toRequestMessage(saved);
+        asyncSender.send(requestMessage);
+        log.debug("Payment forwarded to async broker: paymentGuid={}", saved.getGuid());
+
         return paymentMapper.toDto(saved);
     }
 
