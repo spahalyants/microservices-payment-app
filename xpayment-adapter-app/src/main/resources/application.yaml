@@ -42,3 +42,10 @@ app:
         request: xpayment-adapter.requests
         response: xpayment-adapter.responses
         dlt: xpayment-adapter.requests.DLT
+
+  x-payment-provider-api:
+    client:
+      url: http://localhost:9999
+      username: paymentAgentIprody
+      password: iprodyTestPassword0123
+      account: paymentAgentIprodyApiToken

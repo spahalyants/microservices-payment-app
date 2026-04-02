@@ -1,0 +1,187 @@
+openapi: 3.1.0
+info:
+  title: X Payment API
+  description: API for creating and retrieving charges
+  version: 1.0.0
+servers:
+  - url: https://api.xpayment.com/v1
+    description: X Payment API server (Production)
+  - url: http://localhost:9999
+    description: X Payment API server (Development)
+paths:
+  /charges:
+    post:
+      summary: Create a charge
+      description: Create a new charge
+      operationId: createCharge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChargeRequest'
+      responses:
+        '201':
+          description: Charge created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChargeResponse'
+        '401':
+          description: Unauthorized. Either X-Pay-Account or Authorization or both headers were not provided or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '402':
+          description: Request Failed. The parameters were valid but the request failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /charges/{id}:
+    get:
+      summary: Retrieve a charge
+      description: Retrieve a charge by its ID
+      operationId: retrieveCharge
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Unique identifier for the object. Must conform to UUID format.
+            format: uuid
+      responses:
+        '200':
+          description: Charge retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChargeResponse'
+        '401':
+          description: Unauthorized. Either X-Pay-Account or Authorization or both headers were not provided or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found. The requested resource doesn’t exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    CreateChargeRequest:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          description: The amount to be charged by this payment, in decimal format (e.g., 100.50 for $100.50).
+          example: "1090.50"
+        currency:
+          type: string
+          description: Three-letter ISO currency code, in uppercase. Must conform with ISO 4217.
+          example: USD
+        customer:
+          type: string
+          description: Full name of the customer this payment belongs to.
+          example: Henry Ford
+        order:
+          type: string
+          description: Unique identifier of the order this payment belongs to. Also it will be used as idempotency-key.
+          format: uuid
+        receiptEmail:
+          type: string
+          description: Email address to send the receipt to.
+          example: test@email.com
+        metadata:
+          type: object
+          description: Set of key-value pairs that you can attach to an object.
+          additionalProperties: true
+      required:
+        - id
+        - amount
+        - currency
+        - customer
+        - order
+        - receiptEmail
+    ChargeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the charge a the inquired payment belongs to. Must conform to UUID format.
+          format: uuid
+        amount:
+          type: string
+          format: decimal
+          description: The amount to be charged by this payment, in decimal format (e.g., 100.50 for $100.50).
+          example: "2000.00"
+        currency:
+          type: string
+          description: Three-letter ISO currency code, in uppercase. Must conform with ISO 4217.
+          example: USD
+        amountReceived:
+          type: string
+          format: decimal
+          description: Amount eventually charged by this payment.
+          example: "0.00"
+        createdAt:
+          type: string
+          description: Time at which the payment was created but not yet charged. Must conform ISO 8601.
+          example: 2011-12-03T10:15:30Z
+        chargedAt:
+          type: string
+          description: Time at which the payment was created. Must conform ISO 8601.
+          example: 2011-12-03T10:15:30Z
+        customer:
+          type: string
+          description: Full name of the customer this payment belongs to.
+          example: Henry Ford
+        order:
+          type: string
+          description: Unique identifier of the order this payment belongs to.
+          format: uuid
+        receiptEmail:
+          type: string
+          description: Email address to send the receipt to.
+          example: henry.ford@email.com
+        status:
+          type: string
+          description: Status of this payment, one of processing, canceled, or succeeded.
+          example: processing
+        metadata:
+          type: object
+          description: Set of key-value pairs that you can attach to a payment.
+          additionalProperties: true
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          description: HTTP status code of the error.
+          example: 401
+        message:
+          type: string
+          description: Error message describing the error.
+          example: Unauthorized. Either X-Pay-Account or Authorization or both headers were not provided or invalid.
+        chargeId:
+          type: string
+          description: Unique identifier of the order related to the error.
+          format: uuid
+  securitySchemes:
+    X-Pay-Account:
+      type: apiKey
+      in: header
+      name: X-Pay-Account
+      description: To act as connected accounts, clients can issue requests using the X-Pay-Account special header. Make sure that this header contains a pre-generated XPAY Account ID.
+    BasicAuth:
+      type: http
+      scheme: basic
+      description: Basic authentication using username and password.
+security:
+  - X-Pay-Account: []
+  - BasicAuth: []

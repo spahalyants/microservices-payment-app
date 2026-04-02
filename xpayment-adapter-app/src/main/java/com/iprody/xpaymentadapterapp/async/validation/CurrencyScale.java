@@ -5,9 +5,11 @@ import java.util.Optional;
 
 public final class CurrencyScale {
 
-    static final int DEFAULT_SCALE = 2;
-
     private static final Map<String, Integer> SCALE_MAP = Map.ofEntries(
+        Map.entry("USD", 2),
+        Map.entry("EUR", 2),
+        Map.entry("GBP", 2),
+        Map.entry("CZK", 2),
         Map.entry("JPY", 0),
         Map.entry("KRW", 0),
         Map.entry("VND", 0),
@@ -34,6 +36,8 @@ public final class CurrencyScale {
         return Optional.ofNullable(currencyCode)
             .map(String::toUpperCase)
             .map(SCALE_MAP::get)
-            .orElse(DEFAULT_SCALE);
+            .orElseThrow(() -> new MessageValidationException(
+                "Unknown ISO 4217 currency code: " + currencyCode
+            ));
     }
 }
