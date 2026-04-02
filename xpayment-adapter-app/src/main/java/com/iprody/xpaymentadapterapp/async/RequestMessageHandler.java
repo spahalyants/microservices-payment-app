@@ -1,66 +1,73 @@
 package com.iprody.xpaymentadapterapp.async;
 
-import jakarta.annotation.PreDestroy;
+import com.iprody.xpaymentadapterapp.api.CreateChargeRequestDto;
+import com.iprody.xpaymentadapterapp.api.CreateChargeResponseDto;
+import com.iprody.xpaymentadapterapp.api.XPaymentProviderGateway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 @Component
 public class RequestMessageHandler implements MessageHandler<XPaymentAdapterRequestMessage> {
 
     private static final Logger log = LoggerFactory.getLogger(RequestMessageHandler.class);
 
-    private static final long PROCESSING_DELAY_SECONDS = 30L;
+    private final XPaymentProviderGateway xPaymentProviderGateway;
+    private final AsyncSender<XPaymentAdapterResponseMessage> asyncSender;
 
-    private final AsyncSender<XPaymentAdapterResponseMessage> sender;
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-
-    public RequestMessageHandler(AsyncSender<XPaymentAdapterResponseMessage> sender) {
-        this.sender = sender;
+    public RequestMessageHandler(
+        XPaymentProviderGateway xPaymentProviderGateway,
+        AsyncSender<XPaymentAdapterResponseMessage> asyncSender
+    ) {
+        this.xPaymentProviderGateway = xPaymentProviderGateway;
+        this.asyncSender = asyncSender;
     }
 
     @Override
     public void handle(XPaymentAdapterRequestMessage message) {
-        log.info("Scheduling payment processing: paymentGuid={}, amount={}, currency={}",
+        log.info("Payment request received: paymentGuid={}, amount={}, currency={}",
             message.getPaymentGuid(), message.getAmount(), message.getCurrency());
-        scheduler.schedule(
-            () -> processAndRespond(message),
-            PROCESSING_DELAY_SECONDS,
-            TimeUnit.SECONDS
-        );
-    }
 
-    private void processAndRespond(XPaymentAdapterRequestMessage request) {
-        final XPaymentAdapterStatus status = resolveStatus(request.getAmount());
-        log.info("Processing complete: paymentGuid={}, resolvedStatus={}",
-            request.getPaymentGuid(), status);
-        final XPaymentAdapterResponseMessage response = new XPaymentAdapterResponseMessage();
-        response.setMessageId(UUID.randomUUID());
-        response.setPaymentGuid(request.getPaymentGuid());
-        response.setAmount(request.getAmount());
-        response.setCurrency(request.getCurrency());
-        response.setStatus(status);
-        response.setTransactionRefId(UUID.randomUUID());
-        response.setOccurredAt(Instant.now());
-        sender.send(response);
-    }
+        final CreateChargeRequestDto requestDto = new CreateChargeRequestDto();
+        requestDto.setAmount(message.getAmount());
+        requestDto.setCurrency(message.getCurrency());
+        requestDto.setOrder(message.getPaymentGuid());
 
-    private XPaymentAdapterStatus resolveStatus(BigDecimal amount) {
-        final boolean divisibleByTwo =
-            amount.remainder(BigDecimal.valueOf(2)).compareTo(BigDecimal.ZERO) == 0;
-        return divisibleByTwo ? XPaymentAdapterStatus.SUCCEEDED : XPaymentAdapterStatus.CANCELED;
-    }
+        try {
+            final CreateChargeResponseDto responseDto =
+                xPaymentProviderGateway.createCharge(requestDto);
+            log.info("Payment forwarded to X Payment Provider: paymentGuid={}, status={}",
+                message.getPaymentGuid(), responseDto.getStatus());
 
-    @PreDestroy
-    public void shutdown() {
-        log.info("Shutting down RequestMessageHandler scheduler");
-        scheduler.shutdown();
+            final XPaymentAdapterResponseMessage responseMessage =
+                new XPaymentAdapterResponseMessage();
+            responseMessage.setMessageId(UUID.randomUUID());
+            responseMessage.setPaymentGuid(responseDto.getOrder());
+            responseMessage.setTransactionRefId(responseDto.getId());
+            responseMessage.setAmount(responseDto.getAmount());
+            responseMessage.setCurrency(responseDto.getCurrency());
+            responseMessage.setStatus(XPaymentAdapterStatus
+                .valueOf(responseDto.getStatus().toUpperCase()));
+            responseMessage.setOccurredAt(Instant.now());
+            asyncSender.send(responseMessage);
+
+        } catch (RestClientException ex) {
+            log.error("Failed to forward payment to X Payment Provider: paymentGuid={}",
+                message.getPaymentGuid(), ex);
+
+            final XPaymentAdapterResponseMessage responseMessage =
+                new XPaymentAdapterResponseMessage();
+            responseMessage.setMessageId(UUID.randomUUID());
+            responseMessage.setPaymentGuid(message.getPaymentGuid());
+            responseMessage.setAmount(message.getAmount());
+            responseMessage.setCurrency(message.getCurrency());
+            responseMessage.setStatus(XPaymentAdapterStatus.CANCELED);
+            responseMessage.setOccurredAt(Instant.now());
+            asyncSender.send(responseMessage);
+        }
     }
 }
