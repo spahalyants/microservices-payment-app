@@ -18,6 +18,7 @@
 
     <modules>
         <module>payment-service-app</module>
+        <module>xpayment-adapter-app</module>
     </modules>
 
     <build>
@@ -39,7 +40,6 @@
 
                 <configuration>
                     <configLocation>${maven.multiModuleProjectDirectory}/checkstyle.xml</configLocation>
-                    <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <linkXRef>false</linkXRef>
