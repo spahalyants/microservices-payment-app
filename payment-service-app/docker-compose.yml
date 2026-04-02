@@ -48,25 +48,18 @@ services:
     image: bitnamilegacy/kafka:latest
     container_name: kafka
     ports:
-      - "9092:9092"   # для клиентов из docker-сети (Kafka UI, другие сервисы)
-      - "9093:9093"   # для внешних клиентов (ваш хост)
+      - "9092:9092"
+      - "9093:9093"
     environment:
       - KAFKA_ENABLE_KRAFT=yes
       - KAFKA_CFG_PROCESS_ROLES=broker,controller
       - KAFKA_CFG_NODE_ID=1
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9094
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-
-      # слушатели
       - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,EXTERNAL://:9093,CONTROLLER://:9094
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
-
-      # рекламируем: внутри докера - kafka:9092, снаружи - localhost:9093
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:9093
-
-      # брокеры общаются через PLAINTEXT (у вас кластер из одного узла)
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
-
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
     volumes:
       - kafka_data:/bitnami/kafka
@@ -82,7 +75,24 @@ services:
     depends_on:
       - kafka
 
+  rabbitmq:
+    image: rabbitmq:4.1.4-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./rabbitmq_delayed_message_exchange-4.1.0.ez:/opt/rabbitmq/plugins/rabbitmq_delayed_message_exchange-4.1.0.ez
+    command: >
+      bash -c "rabbitmq-plugins enable --offline rabbitmq_delayed_message_exchange && rabbitmq-server"
+    restart: unless-stopped
+
 volumes:
   pgdata:
   kafka_data:
+  rabbitmq_data:
 

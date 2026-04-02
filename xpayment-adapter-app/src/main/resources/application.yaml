@@ -23,6 +23,11 @@ spring:
     listener:
       ack-mode: manual
       concurrency: 1
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: admin
 
 logging:
   level:
@@ -42,6 +47,12 @@ app:
         request: xpayment-adapter.requests
         response: xpayment-adapter.responses
         dlt: xpayment-adapter.requests.DLT
+
+  rabbitmq:
+    exchange-name: payment-state-check-exchange
+    queue-name: payment-state-check-queue
+    max-attempts: 60
+    interval-ms: 60000
 
   x-payment-provider-api:
     client:
