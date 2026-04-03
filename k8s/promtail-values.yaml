@@ -1,0 +1,21 @@
+config:
+  snippets:
+    pipelineStages:
+      - docker: {}
+      - json:
+          expressions:
+            level: level
+            logger: logger
+            traceId: traceId
+            spanId: spanId
+            message: message
+      - labels:
+          level:
+          logger:
+          traceId:
+          spanId:
+      - output:
+          source: message
+
+  clients:
+    - url: http://loki-gateway.observability.svc.cluster.local/loki/api/v1/push

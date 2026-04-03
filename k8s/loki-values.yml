@@ -1,0 +1,39 @@
+deploymentMode: SingleBinary
+
+singleBinary:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+
+# Отключаем компоненты simple-scalable
+read:
+  replicas: 0
+write:
+  replicas: 0
+backend:
+  replicas: 0
+
+loki:
+  auth_enabled: false
+  storage:
+    type: filesystem
+  useTestSchema: true
+  commonConfig:
+    replication_factor: 1
+  ring:
+    kvstore:
+      store: memberlist
+  limits_config:
+    volume_enabled: true
+
+persistence:
+  enabled: false
+
+chunksCache:
+  enabled: false
+resultsCache:
+  enabled: false

@@ -28,6 +28,8 @@ public class PaymentStateCheckListener {
         RabbitTemplate rabbitTemplate,
         @Value("${app.rabbitmq.exchange-name}") String exchangeName,
         @Value("${app.rabbitmq.queue-name}") String routingKey,
+        @Value("${app.rabbitmq.dlx-exchange-name}") String dlxExchangeName,
+        @Value("${app.rabbitmq.dlx-routing-key}") String dlxRoutingKey,
         @Value("${app.rabbitmq.max-attempts}") int maxAttempts,
         @Value("${app.rabbitmq.interval-ms}") long intervalMs,
         PaymentStatusCheckHandler paymentStatusCheckHandler
@@ -35,8 +37,8 @@ public class PaymentStateCheckListener {
         this.rabbitTemplate = rabbitTemplate;
         this.exchangeName = exchangeName;
         this.routingKey = routingKey;
-        this.dlxExchangeName = "payments.dlx";
-        this.dlxRoutingKey = "payments.dead";
+        this.dlxExchangeName = dlxExchangeName;
+        this.dlxRoutingKey = dlxRoutingKey;
         this.maxAttempts = maxAttempts;
         this.intervalMs = intervalMs;
         this.paymentStatusCheckHandler = paymentStatusCheckHandler;
@@ -45,7 +47,8 @@ public class PaymentStateCheckListener {
     @RabbitListener(queues = "${app.rabbitmq.queue-name}")
     public void handle(PaymentCheckStateMessage message, Message raw) {
         final MessageProperties props = raw.getMessageProperties();
-        final int retryCount = (int) props.getHeaders().getOrDefault("x-retry-count", 0);
+        final Object retryHeader = props.getHeaders().getOrDefault("x-retry-count", 0);
+        final int retryCount = retryHeader instanceof Integer i ? i : 0;
         log.info("Status check received: chargeGuid={}, attempt={}/{}",
             message.getChargeGuid(), retryCount, maxAttempts);
 

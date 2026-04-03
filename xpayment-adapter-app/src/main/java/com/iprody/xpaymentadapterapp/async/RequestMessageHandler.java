@@ -69,16 +69,7 @@ public class RequestMessageHandler implements MessageHandler<XPaymentAdapterRequ
         } catch (RestClientException ex) {
             log.error("Failed to forward payment to X Payment Provider: paymentGuid={}",
                 message.getPaymentGuid(), ex);
-
-            final XPaymentAdapterResponseMessage responseMessage =
-                new XPaymentAdapterResponseMessage();
-            responseMessage.setMessageId(UUID.randomUUID());
-            responseMessage.setPaymentGuid(message.getPaymentGuid());
-            responseMessage.setAmount(message.getAmount());
-            responseMessage.setCurrency(message.getCurrency());
-            responseMessage.setStatus(XPaymentAdapterStatus.CANCELED);
-            responseMessage.setOccurredAt(Instant.now());
-            asyncSender.send(responseMessage);
+            throw ex;
         }
     }
 }

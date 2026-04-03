@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: x-payment-adapter-app
+  labels:
+    app: x-payment-adapter-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: x-payment-adapter-app
+  template:
+    metadata:
+      labels:
+        app: x-payment-adapter-app
+    spec:
+      containers:
+        - name: x-payment-adapter-app
+          image: localhost:5001/x-payment-adapter-app:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8082
+            - name: mgmt
+              containerPort: 8081
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: mgmt
+            periodSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: mgmt
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: mgmt
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          env:
+            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+              value: my-kafka-controller-0.kafka.svc.cluster.local:9092
+            - name: SPRING_RABBITMQ_HOST
+              value: my-rabbit-rabbitmq.rabbit.svc.cluster.local
+            - name: SPRING_RABBITMQ_PORT
+              value: "5672"
+            - name: SPRING_RABBITMQ_USERNAME
+              value: admin
+            - name: SPRING_RABBITMQ_PASSWORD
+              value: admin
+            - name: APP_X_PAYMENT_PROVIDER_API_CLIENT_URL
+              value: http://host.docker.internal:9999
+            - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+              value: http://zipkin.observability.svc.cluster.local:9411/api/v2/spans
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: x-payment-adapter-app
+  labels:
+    app: x-payment-adapter-app
+spec:
+  selector:
+    app: x-payment-adapter-app
+  ports:
+    - protocol: TCP
+      port: 8082
+      targetPort: 8082
+  type: ClusterIP

@@ -21,14 +21,15 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
   liquibase:
-      enabled: true
-      change-log: classpath:db/changelog/db.changelog-master.yaml
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
 
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8085/realms/iprody-lms
+
   kafka:
     bootstrap-servers: localhost:9093
     producer:
@@ -47,6 +48,9 @@ spring:
     listener:
       ack-mode: manual
       concurrency: 1
+      observation-enabled: true
+    template:
+      observation-enabled: true
 
 logging:
   level:
@@ -56,10 +60,24 @@ logging:
     org.springframework.security: INFO
 
 management:
+  server:
+    port: 8081
   endpoints:
     web:
       exposure:
         include: health,info,liquibase,beans,metrics,env,loggers
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
+    propagation:
+      type: w3c,b3
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
 
 app:
   kafka:
