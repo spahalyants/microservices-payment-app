@@ -3,6 +3,7 @@ package com.iprody.xpaymentadapterapp.async;
 import com.iprody.xpaymentadapterapp.api.CreateChargeRequestDto;
 import com.iprody.xpaymentadapterapp.api.CreateChargeResponseDto;
 import com.iprody.xpaymentadapterapp.api.XPaymentProviderGateway;
+import com.iprody.xpaymentadapterapp.checkstate.PaymentStateCheckRegistrar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -18,13 +19,16 @@ public class RequestMessageHandler implements MessageHandler<XPaymentAdapterRequ
 
     private final XPaymentProviderGateway xPaymentProviderGateway;
     private final AsyncSender<XPaymentAdapterResponseMessage> asyncSender;
+    private final PaymentStateCheckRegistrar paymentStateCheckRegistrar;
 
     public RequestMessageHandler(
         XPaymentProviderGateway xPaymentProviderGateway,
-        AsyncSender<XPaymentAdapterResponseMessage> asyncSender
+        AsyncSender<XPaymentAdapterResponseMessage> asyncSender,
+        PaymentStateCheckRegistrar paymentStateCheckRegistrar
     ) {
         this.xPaymentProviderGateway = xPaymentProviderGateway;
         this.asyncSender = asyncSender;
+        this.paymentStateCheckRegistrar = paymentStateCheckRegistrar;
     }
 
     @Override
@@ -54,6 +58,13 @@ public class RequestMessageHandler implements MessageHandler<XPaymentAdapterRequ
                 .valueOf(responseDto.getStatus().toUpperCase()));
             responseMessage.setOccurredAt(Instant.now());
             asyncSender.send(responseMessage);
+
+            paymentStateCheckRegistrar.register(
+                responseDto.getId(),
+                responseDto.getOrder(),
+                responseDto.getAmount(),
+                responseDto.getCurrency()
+            );
 
         } catch (RestClientException ex) {
             log.error("Failed to forward payment to X Payment Provider: paymentGuid={}",
