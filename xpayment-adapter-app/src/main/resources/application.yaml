@@ -23,6 +23,9 @@ spring:
     listener:
       ack-mode: manual
       concurrency: 1
+      observation-enabled: true
+    template:
+      observation-enabled: true
   rabbitmq:
     host: localhost
     port: 5672
@@ -35,10 +38,24 @@ logging:
     org.springframework.kafka: INFO
 
 management:
+  server:
+    port: 8081
   endpoints:
     web:
       exposure:
         include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
+    propagation:
+      type: w3c,b3
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
 
 app:
   kafka:
@@ -51,6 +68,8 @@ app:
   rabbitmq:
     exchange-name: payment-state-check-exchange
     queue-name: payment-state-check-queue
+    dlx-exchange-name: payments.dlx
+    dlx-routing-key: payments.dead
     max-attempts: 60
     interval-ms: 60000
 

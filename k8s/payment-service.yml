@@ -19,7 +19,32 @@ spec:
           image: localhost:5001/payment-service:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: 8080
+            - name: http
+              containerPort: 8080
+            - name: mgmt
+              containerPort: 8081
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: mgmt
+            periodSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: mgmt
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: mgmt
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
           env:
             - name: SPRING_DATASOURCE_URL
               value: jdbc:postgresql://my-pg-postgresql.db.svc.cluster.local:5432/payment-db
@@ -28,13 +53,15 @@ spec:
             - name: SPRING_DATASOURCE_PASSWORD
               value: secret
             - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
-              value: my-kafka-controller-0.my-kafka-controller-headless.kafka.svc.cluster.local:9092
+              value: my-kafka-controller-0.kafka.svc.cluster.local:9092
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI
               value: http://keycloak.keycloak.svc.cluster.local:8080/realms/iprody-lms/protocol/openid-connect/certs
             - name: SPRING_JPA_HIBERNATE_DDL_AUTO
               value: validate
             - name: SPRING_LIQUIBASE_ENABLED
               value: "true"
+            - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+              value: http://zipkin.observability.svc.cluster.local:9411/api/v2/spans
 ---
 apiVersion: v1
 kind: Service
